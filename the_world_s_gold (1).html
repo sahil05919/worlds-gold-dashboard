@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE WORLD'S GOLD — An Interactive Visual Story</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            100: '#FFFBEB',
+                            300: '#FDE047',
+                            400: '#F3E5AB',
+                            500: '#D4AF37',
+                            600: '#C59B27',
+                            700: '#AA7C11',
+                            800: '#785408',
+                            glow: 'rgba(212, 175, 55, 0.18)',
+                        },
+                        dark: {
+                            950: '#070809',
+                            900: '#0B0C0E',
+                            850: '#111317',
+                            800: '#171A21',
+                            750: '#1F232D',
+                            700: '#282E3B',
+                            600: '#384052'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #070809;
+            color: #E2E8F0;
+            overflow-x: hidden;
+        }
+
+        .gold-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #FFFBEB 0%, #F3E5AB 25%, #D4AF37 65%, #9A7B1C 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gold-border-glow {
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.12);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .vault-card {
+            background: linear-gradient(180deg, rgba(23, 26, 33, 0.95) 0%, rgba(17, 19, 23, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .vault-card:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070809;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #282E3B;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4AF37;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #1F232D;
+            border-radius: 4px;
+            border: 1px solid #384052;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background: #D4AF37;
+            box-shadow: 0 0 14px rgba(212, 175, 55, 0.8);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -7px;
+        }
+
+        /* Leaflet Dark Map Overrides */
+        .leaflet-container {
+            background: #111317 !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: #171A21 !important;
+            color: #F3F4F6 !important;
+            border: 1px solid #D4AF37 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
+            border-radius: 12px !important;
+        }
+
+        /* Badges */
+        .badge-official {
+            background-color: rgba(16, 185, 129, 0.12);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .badge-estimate {
+            background-color: rgba(245, 158, 11, 0.12);
+            color: #FBBF24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .badge-calculated {
+            background-color: rgba(99, 102, 241, 0.12);
+            color: #818CF8;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-gold-500 selection:text-dark-950">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-50 bg-dark-950/90 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between py-4 gap-4">
+                
+                <!-- Brand Title -->
+                <div class="flex items-center justify-between w-full md:w-auto">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-300 via-gold-500 to-gold-700 flex items-center justify-center text-dark-950 font-black text-xl shadow-lg shadow-gold-500/20">
+                            <i class="fa-solid fa-vault"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl sm:text-2xl font-black tracking-wider text-white gold-serif flex items-center gap-2">
+                                THE WORLD'S GOLD
+                            </h1>
+                            <p class="text-xs text-gray-400 font-medium">How much exists? Where is it? Who owns it? What is it worth?</p>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleSourcesDrawer()" class="md:hidden px-3 py-1.5 rounded-lg bg-dark-800 border border-dark-600 text-xs text-gold-400">
+                        <i class="fa-solid fa-book-bookmark mr-1"></i> Sources
+                    </button>
+                </div>
+
+                <!-- Live Market Ticker & Methodology Button -->
+                <div class="hidden xl:flex items-center space-x-6 text-xs font-mono bg-dark-850 py-2 px-4 rounded-xl border border-white/5">
+                    <div>
+                        <span class="text-gray-500 block text-[10px]">SPOT PRICE (LBMA)</span>
+                        <span class="text-gold-400 font-bold" id="tickerSpotPrice">$3,450.00 / oz</span>
+                    </div>
+                    <div class="h-6 w-px bg-dark-700"></div>
+                    <div>
+                        <span class="text-gray-500 block text-[10px]">TOTAL GOLD VALUE</span>
+                        <span class="text-white font-bold" id="tickerTotalCap">$24.39 Trillion</span>
+                    </div>
+                    <div class="h-6 w-px bg-dark-700"></div>
+                    <div>
+                        <button onclick="toggleSourcesDrawer()" class="text-gold-400 hover:text-white transition-colors underline font-sans flex items-center gap-1.5">
+                            <i class="fa-solid fa-shield-halved"></i> Sources & Methodology
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs (Question-Driven) -->
+                <nav class="flex bg-dark-850 p-1.5 rounded-xl border border-white/10 w-full md:w-auto overflow-x-auto text-xs sm:text-sm font-medium" id="mainNav">
+                    <button onclick="switchTab('how-much')" id="tab-how-much" class="nav-tab active whitespace-nowrap px-3.5 py-2 rounded-lg transition-all bg-gold-500 text-dark-950 font-bold shadow-md">
+                        01. How Much Exists?
+                    </button>
+                    <button onclick="switchTab('who-has')" id="tab-who-has" class="nav-tab whitespace-nowrap px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-white">
+                        02. Who Has the Most?
+                    </button>
+                    <button onclick="switchTab('where-is')" id="tab-where-is" class="nav-tab whitespace-nowrap px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-white">
+                        03. Where Is It?
+                    </button>
+                    <button onclick="switchTab('what-worth')" id="tab-what-worth" class="nav-tab whitespace-nowrap px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-white">
+                        04. What Is It Worth?
+                    </button>
+                    <button onclick="switchTab('price-story')" id="tab-price-story" class="nav-tab whitespace-nowrap px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-white">
+                        05. Price Story
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Content Wrapper -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+        <!-- ==================================================================== -->
+        <!-- PAGE 1: HOW MUCH GOLD EXISTS? -->
+        <!-- ==================================================================== -->
+        <section id="page-how-much" class="page-section space-y-10">
+            
+            <!-- Hero Banner -->
+            <div class="relative overflow-hidden rounded-3xl p-8 sm:p-10 border border-gold-500/30 bg-gradient-to-br from-dark-850 via-dark-900 to-dark-950 gold-border-glow space-y-4">
+                <div class="max-w-3xl space-y-3">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full badge-official text-xs font-mono font-semibold">
+                        <i class="fa-solid fa-compass"></i> Digital Museum Exhibit 01
+                    </div>
+                    <h2 class="text-3xl sm:text-5xl font-black text-white gold-serif leading-tight">
+                        Humanity has mined <span class="gold-gradient-text">219,891 tonnes</span> of gold — and almost all of it still exists.
+                    </h2>
+                    <p class="text-base sm:text-lg text-gray-300 font-light leading-relaxed">
+                        Because gold is chemically indestructible, virtually every gram extracted over thousands of years is still sitting in vaults, jewellery boxes, electronics, or monetary reserves.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 5 Key Numbers -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="flex items-center justify-between text-gray-400">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Gold Mined So Far</span>
+                        <i class="fa-solid fa-cubes text-gold-500"></i>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-white font-mono">219,891 <span class="text-xs text-gold-400">t</span></div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/5 text-[10px]">
+                        <span class="text-gray-400">Above-ground stock</span>
+                        <span class="badge-official px-1.5 py-0.5 rounded font-mono">WGC Data</span>
+                    </div>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="flex items-center justify-between text-gray-400">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Underground Reserves</span>
+                        <i class="fa-solid fa-mountain text-amber-500"></i>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-white font-mono">54,770 <span class="text-xs text-amber-400">t</span></div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/5 text-[10px]">
+                        <span class="text-gray-400">~19.9% left unmined</span>
+                        <span class="badge-estimate px-1.5 py-0.5 rounded font-mono">USGS Estimate</span>
+                    </div>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="flex items-center justify-between text-gray-400">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Total Mined Value</span>
+                        <i class="fa-solid fa-dollar-sign text-emerald-400"></i>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-emerald-400 font-mono" id="kpiTotalVal">$24.39 T</div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/5 text-[10px]">
+                        <span class="text-gray-400">At $3,450/oz Spot</span>
+                        <span class="badge-calculated px-1.5 py-0.5 rounded font-mono">Calculated</span>
+                    </div>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="flex items-center justify-between text-gray-400">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Central Bank Gold</span>
+                        <i class="fa-solid fa-building-columns text-blue-400"></i>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-white font-mono">38,666 <span class="text-xs text-blue-400">t</span></div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/5 text-[10px]">
+                        <span class="text-gray-400">17.6% of mined stock</span>
+                        <span class="badge-official px-1.5 py-0.5 rounded font-mono">Official</span>
+                    </div>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="flex items-center justify-between text-gray-400">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Gold Per Person</span>
+                        <i class="fa-solid fa-user-group text-purple-400"></i>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-white font-mono">27.15 <span class="text-xs text-purple-400">g</span></div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/5 text-[10px]">
+                        <span class="text-gray-400">~$3,012 per capita</span>
+                        <span class="badge-calculated px-1.5 py-0.5 rounded font-mono">8.1B People</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- "HOW MUCH GOLD IS LEFT?" Section -->
+            <div class="vault-card p-6 sm:p-8 rounded-3xl space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white gold-serif flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-amber-400"></i>
+                            How Much Gold Is Left Underground?
+                        </h3>
+                        <p class="text-xs text-gray-400 mt-1">Comparing humanity's mined gold above ground with known recoverable geological reserves.</p>
+                    </div>
+                    <span class="badge-estimate text-xs px-2.5 py-1 rounded-full font-mono">USGS Reserve Estimate</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    <div class="md:col-span-8 space-y-3">
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-gold-400 font-bold">Mined Above Ground: 219,891 tonnes (80.1%)</span>
+                            <span class="text-amber-400 font-bold">Underground Reserves: 54,770 tonnes (19.9%)</span>
+                        </div>
+                        <div class="w-full h-6 bg-dark-950 rounded-full overflow-hidden flex border border-white/10 p-1">
+                            <div class="h-full bg-gradient-to-r from-gold-600 to-gold-400 rounded-l-full" style="width: 80.1%"></div>
+                            <div class="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-r-full" style="width: 19.9%"></div>
+                        </div>
+                        <p class="text-xs text-gray-400 leading-relaxed pt-1">
+                            <strong>Important Note on Reserves:</strong> Underground reserve figures represent <em>economically recoverable deposits</em> known to geologists today with current mining technology and prices. They do not represent every atom of gold inside Earth's mantle, which is mostly inaccessible.
+                        </p>
+                    </div>
+
+                    <div class="md:col-span-4 bg-dark-950 p-4 rounded-2xl border border-white/5 text-center space-y-1">
+                        <span class="text-[10px] text-gray-500 uppercase font-mono block">Estimated Total Crustal Supply</span>
+                        <div class="text-2xl font-black text-white font-mono">274,661 <span class="text-xs text-gold-400">tonnes</span></div>
+                        <span class="text-xs text-gold-400 font-medium">~80% has already been extracted</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- "MINE -> REFINE -> USE -> RECYCLE -> REUSE" Lifecycle Visual -->
+            <div class="p-6 sm:p-8 rounded-3xl bg-dark-850 border border-white/10 space-y-6">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gold-500/10 text-gold-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-arrows-spin"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white gold-serif">The Infinite Gold Lifecycle</h3>
+                        <p class="text-xs text-gray-400">Because gold never decays, mined gold rotates continuously through society.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center text-xs font-mono">
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto text-sm font-bold">1</div>
+                        <div class="font-bold text-white">MINE</div>
+                        <div class="text-[10px] text-gray-400 font-sans">Ore extracted & crushed</div>
+                    </div>
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="w-8 h-8 rounded-lg bg-gold-500/10 text-gold-400 flex items-center justify-center mx-auto text-sm font-bold">2</div>
+                        <div class="font-bold text-white">REFINE</div>
+                        <div class="text-[10px] text-gray-400 font-sans">Purified to 99.99% pure</div>
+                    </div>
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center mx-auto text-sm font-bold">3</div>
+                        <div class="font-bold text-white">USE</div>
+                        <div class="text-[10px] text-gray-400 font-sans">Jewellery, coins, electronics</div>
+                    </div>
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto text-sm font-bold">4</div>
+                        <div class="font-bold text-white">RECYCLE</div>
+                        <div class="text-[10px] text-gray-400 font-sans">Melted down & reclaimed</div>
+                    </div>
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2 col-span-2 sm:col-span-1">
+                        <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center mx-auto text-sm font-bold">5</div>
+                        <div class="font-bold text-white">REUSE</div>
+                        <div class="text-[10px] text-gray-400 font-sans">Reminted into new bars</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Centrepiece Visual: WHERE IS ALL THE GOLD? -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <div class="lg:col-span-7 vault-card p-6 sm:p-8 rounded-3xl space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                            <h3 class="text-2xl font-bold text-white gold-serif">Where Is All the Gold?</h3>
+                            <p class="text-xs text-gray-400">Breakdown of 219,891 tonnes of above-ground gold stock</p>
+                        </div>
+                        <span class="badge-official text-xs px-2.5 py-1 rounded-full font-mono">WGC Data Standard</span>
+                    </div>
+
+                    <div class="h-72 relative">
+                        <canvas id="sectorChart"></canvas>
+                    </div>
+
+                    <div class="space-y-2 pt-4 border-t border-white/5">
+                        <div class="w-full h-3 bg-dark-950 rounded-full overflow-hidden flex">
+                            <div class="h-full bg-amber-400" style="width: 44.4%" title="Jewellery: 97,645t"></div>
+                            <div class="h-full bg-gold-500" style="width: 23.2%" title="Bars, Coins & ETFs: 50,978t"></div>
+                            <div class="h-full bg-blue-500" style="width: 17.6%" title="Central Banks: 38,666t"></div>
+                            <div class="h-full bg-emerald-500" style="width: 14.8%" title="Other / Technology: 32,602t"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 space-y-3">
+                    <div class="vault-card p-4 rounded-2xl flex items-start space-x-4">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg font-bold flex-shrink-0">
+                            <i class="fa-solid fa-gem"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Jewellery — 97,645 t (44.4%)</h4>
+                            <p class="text-xs text-gray-400 mt-1">The largest component. Almost half of all gold sits in personal jewellery, concentrated heavily in India and China as family wealth reserves.</p>
+                        </div>
+                    </div>
+
+                    <div class="vault-card p-4 rounded-2xl flex items-start space-x-4">
+                        <div class="w-10 h-10 rounded-xl bg-gold-500/10 text-gold-400 flex items-center justify-center text-lg font-bold flex-shrink-0">
+                            <i class="fa-solid fa-coins"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Bars, Coins & ETFs — 50,978 t (23.2%)</h4>
+                            <p class="text-xs text-gray-400 mt-1">Physical gold bars, sovereign bullion coins, and vault-backed exchange-traded funds held by private investors worldwide.</p>
+                        </div>
+                    </div>
+
+                    <div class="vault-card p-4 rounded-2xl flex items-start space-x-4">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg font-bold flex-shrink-0">
+                            <i class="fa-solid fa-building-columns"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Central Banks — 38,666 t (17.6%)</h4>
+                            <p class="text-xs text-gray-400 mt-1">Official monetary reserves held by sovereign nations as ultimate balance-sheet backing and inflation hedges.</p>
+                        </div>
+                    </div>
+
+                    <div class="vault-card p-4 rounded-2xl flex items-start space-x-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg font-bold flex-shrink-0">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Other & Tech — 32,602 t (14.8%)</h4>
+                            <p class="text-xs text-gray-400 mt-1">Industrial applications in electronics, satellite insulation, medical implants, and unallocated historical stocks.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Physical Size Visual: "If all gold were melted into one cube..." -->
+            <div class="vault-card p-6 sm:p-8 rounded-3xl space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white gold-serif flex items-center gap-2">
+                            <i class="fa-solid fa-cube text-gold-400"></i>
+                            If all the gold ever mined were melted into one cube...
+                        </h3>
+                        <p class="text-xs text-gray-400 mt-1">Because pure gold is extremely dense (19.32 tonnes per m³), all mined gold fits into a surprisingly compact space.</p>
+                    </div>
+                    <div class="font-mono text-xs text-gold-400 bg-gold-500/10 px-3 py-1.5 rounded-lg border border-gold-500/20">
+                        Pure Gold Density: 19.32 t / m³
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div class="lg:col-span-5 space-y-6">
+                        <div>
+                            <label class="text-xs text-gray-300 font-semibold block mb-2">Select Quantity Scale:</label>
+                            <input type="range" id="cubeSlider" min="0" max="3" step="1" value="3" class="w-full">
+                            <div class="flex justify-between text-[10px] font-mono text-gray-500 mt-2">
+                                <span>1,000t</span>
+                                <span>10,000t</span>
+                                <span>100,000t</span>
+                                <span class="text-gold-400 font-bold">219,891t (All Mined)</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-dark-950 p-5 rounded-2xl border border-white/5 space-y-3 font-mono">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-400">Selected Tonnage:</span>
+                                <span class="text-gold-400 font-bold text-base" id="cubeTonnesLabel">219,891 Tonnes</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-400">Total Volume:</span>
+                                <span class="text-white font-bold" id="cubeVolumeLabel">11,382 m³</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-400">Cube Edge Length:</span>
+                                <span class="text-emerald-400 font-bold text-lg" id="cubeEdgeLabel">22.49 Meters</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-dark-850 rounded-2xl border border-white/5 space-y-1">
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold block">Relatable Scale Benchmark:</span>
+                            <span class="text-sm font-bold text-gold-400 block" id="benchmarkTitle">Statue of Liberty Pedestal</span>
+                            <p class="text-xs text-gray-300" id="benchmarkDesc">Fits inside the stone pedestal base of Lady Liberty (47m base).</p>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-7 flex flex-col items-center justify-center min-h-[300px] bg-dark-950 rounded-2xl border border-white/5 p-6 relative overflow-hidden">
+                        <div class="absolute top-3 left-3 text-[10px] font-mono text-gray-500 flex items-center gap-1">
+                            <i class="fa-solid fa-ruler-combined text-gold-400"></i> Proportional Volume Visualizer
+                        </div>
+                        
+                        <div class="relative flex items-end justify-center w-full h-60">
+                            <div class="absolute bottom-2 left-6 flex flex-col items-center">
+                                <div class="w-2.5 h-2.5 rounded-full bg-blue-400 mb-0.5"></div>
+                                <div class="w-1.5 h-5 bg-blue-400 rounded-t-sm"></div>
+                                <span class="text-[9px] font-mono text-gray-400 mt-1">Human (1.8m)</span>
+                            </div>
+
+                            <div id="visualCubeBox" class="bg-gradient-to-tr from-gold-700 via-gold-500 to-gold-300 rounded-lg shadow-2xl shadow-gold-500/30 flex items-center justify-center text-dark-950 font-black font-mono transition-all duration-500 border border-amber-200">
+                                <span class="text-xs sm:text-sm" id="cubeInnerLabel">22.5m</span>
+                            </div>
+                        </div>
+
+                        <p class="text-center text-xs text-gray-400 mt-4">
+                            All the gold humanity has mined across thousands of years would fit into a single cube roughly <strong class="text-gold-400 font-mono">22.49 meters (73.8 feet)</strong> on each side.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ==================================================================== -->
+        <!-- PAGE 2: WHO HAS THE MOST? -->
+        <!-- ==================================================================== -->
+        <section id="page-who-has" class="page-section hidden space-y-8">
+            
+            <!-- Hero Title -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 vault-card p-8 rounded-3xl">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full badge-official text-xs font-mono font-semibold mb-2">
+                        <i class="fa-solid fa-landmark"></i> Digital Museum Exhibit 02
+                    </div>
+                    <h2 class="text-3xl font-black text-white gold-serif">Who Holds the World's Gold?</h2>
+                    <p class="text-sm text-gray-400 mt-1">
+                        Sovereign central banks hold 38,666 tonnes of gold as official monetary reserves.
+                    </p>
+                </div>
+                
+                <div class="flex items-center bg-dark-950 p-1.5 rounded-xl border border-white/10">
+                    <button onclick="setReservesMetric('tonnes')" id="btnMetricTonnes" class="px-4 py-2 rounded-lg text-xs font-bold bg-gold-500 text-dark-950 transition-all">
+                        <i class="fa-solid fa-weight-hanging mr-1.5"></i> Tonnes
+                    </button>
+                    <button onclick="setReservesMetric('share')" id="btnMetricShare" class="px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all">
+                        <i class="fa-solid fa-percent mr-1.5"></i> % of FX Reserves
+                    </button>
+                </div>
+            </div>
+
+            <!-- "THE UNITED STATES ALONE" Visual Comparison -->
+            <div class="vault-card p-6 sm:p-8 rounded-3xl space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-white gold-serif flex items-center gap-2">
+                        <i class="fa-solid fa-flag-usa text-gold-400"></i>
+                        The United States Alone
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Comparing the world's largest sovereign gold holder against other major sovereign reserves.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <div class="lg:col-span-5 bg-gradient-to-br from-gold-500/10 to-dark-950 p-6 rounded-2xl border border-gold-500/30 space-y-2 text-center">
+                        <span class="text-xs text-gold-400 font-mono font-bold uppercase">#1 Sovereign Holder</span>
+                        <div class="text-4xl sm:text-5xl font-black text-white gold-serif">8,133.5 <span class="text-lg text-gold-400 font-mono">tonnes</span></div>
+                        <p class="text-xs text-gray-300">United States Gold Reserves</p>
+                        <span class="inline-block badge-official text-[10px] px-2.5 py-0.5 rounded-full font-mono mt-2">72.4% of Total US Reserves</span>
+                    </div>
+
+                    <div class="lg:col-span-7 space-y-3 font-mono text-xs">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-white">Germany (3,351.5t) + IMF (2,814.0t)</span>
+                                <span class="text-gold-400">6,165.5 t</span>
+                            </div>
+                            <div class="w-full h-3 bg-dark-950 rounded-full overflow-hidden border border-white/5">
+                                <div class="h-full bg-gold-500 rounded-full" style="width: 75.8%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-white">Italy (2,451.8t) + France (2,436.9t)</span>
+                                <span class="text-blue-400">4,888.7 t</span>
+                            </div>
+                            <div class="w-full h-3 bg-dark-950 rounded-full overflow-hidden border border-white/5">
+                                <div class="h-full bg-blue-500 rounded-full" style="width: 60.1%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-white">Russia (2,335.9t) + China (2,264.3t)</span>
+                                <span class="text-emerald-400">4,600.2 t</span>
+                            </div>
+                            <div class="w-full h-3 bg-dark-950 rounded-full overflow-hidden border border-white/5">
+                                <div class="h-full bg-emerald-500 rounded-full" style="width: 56.5%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- "WHO OWNS GOLD OUTSIDE CENTRAL BANKS?" Section -->
+            <div class="vault-card p-6 sm:p-8 rounded-3xl space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h3 class="text-xl font-bold text-white gold-serif">Who Owns Gold Outside Central Banks?</h3>
+                        <p class="text-xs text-gray-400">Private holdings account for 82.4% (~181,225 tonnes) of all above-ground gold.</p>
+                    </div>
+                    <span class="badge-estimate text-xs px-2.5 py-1 rounded-full font-mono">WGC Market Estimates</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="text-amber-400 text-xs font-mono font-bold">JEWELLERY HOLDINGS</div>
+                        <div class="text-xl font-bold text-white font-mono">97,645 t</div>
+                        <p class="text-xs text-gray-400">Held by private households worldwide. India (~25,000t) and China (~20,000t) represent over 45% of all global jewellery gold.</p>
+                    </div>
+
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="text-gold-400 text-xs font-mono font-bold">BARS & SOVEREIGN COINS</div>
+                        <div class="text-xl font-bold text-white font-mono">46,848 t</div>
+                        <p class="text-xs text-gray-400">Physical bullion bars and legal tender coins held in private vaults, home safes, and commercial custody.</p>
+                    </div>
+
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="text-blue-400 text-xs font-mono font-bold">GOLD ETFs & FUNDS</div>
+                        <div class="text-xl font-bold text-white font-mono">4,130 t</div>
+                        <p class="text-xs text-gray-400">Physically backed ETF shares owned by institutional investors, retirement funds, and retail investors.</p>
+                    </div>
+
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="text-emerald-400 text-xs font-mono font-bold">OTHER & INDUSTRIAL</div>
+                        <div class="text-xl font-bold text-white font-mono">32,602 t</div>
+                        <p class="text-xs text-gray-400">Embedded in satellite electronics, smartphone circuit boards, dental work, and historical artifacts.</p>
+                    </div>
+                </div>
+
+                <p class="text-[11px] text-gray-400 italic pt-2">
+                    * Note: Country-level private holdings are estimated based on historical demand surveys. Official central bank reserves are reported via IMF IFS filings.
+                </p>
+            </div>
+
+            <!-- Bar Chart Visual -->
+            <div class="vault-card p-6 sm:p-8 rounded-3xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-white gold-serif" id="barChartTitle">Top Sovereign Official Gold Reserves (Tonnes)</h3>
+                    <span class="badge-official text-xs px-2.5 py-1 rounded-full font-mono">IMF IFS Verified</span>
+                </div>
+                <div class="h-[420px]">
+                    <canvas id="reservesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Geographic Map -->
+            <div class="vault-card p-6 sm:p-8 rounded-3xl space-y-4">
+                <div>
+                    <h3 class="text-xl font-bold text-white gold-serif flex items-center gap-2">
+                        <i class="fa-solid fa-earth-americas text-gold-400"></i>
+                        Geographic Map of Official Reserves
+                    </h3>
+                    <p class="text-xs text-gray-400">Click any country marker to view official tonnes, FX reserve share, and global rank.</p>
+                </div>
+
+                <div id="mapContainer" class="w-full h-96 rounded-2xl overflow-hidden border border-white/5"></div>
+            </div>
+
+        </section>
+
+
+        <!-- ==================================================================== -->
+        <!-- PAGE 3: WHERE IS IT? -->
+        <!-- ==================================================================== -->
+        <section id="page-where-is" class="page-section hidden space-y-8">
+            
+            <!-- Hero Title -->
+            <div class="vault-card p-8 rounded-3xl space-y-3">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full badge-official text-xs font-mono font-semibold">
+                    <i class="fa-solid fa-boxes-stacked"></i> Digital Museum Exhibit 03
+                </div>
+                <h2 class="text-3xl font-black text-white gold-serif">Where Is the Physical Gold?</h2>
+                <p class="text-base text-gold-400 font-medium">
+                    Who owns gold and where that gold is stored are not always the same thing.
+                </p>
+                <p class="text-xs text-gray-300 max-w-3xl leading-relaxed">
+                    Sovereign central banks frequently hold physical gold abroad in major international financial vaults (like London or New York) to facilitate trade settlement, emergency liquidity, and international custody.
+                </p>
+            </div>
+
+            <!-- Physical Gold vs Financial Exposure Visual Explainer -->
+            <div class="p-6 sm:p-8 rounded-3xl bg-dark-850 border border-gold-500/30 space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-white gold-serif flex items-center gap-2">
+                        <i class="fa-solid fa-vault text-gold-400"></i>
+                        Physical Gold vs. Financial Gold Exposure
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Understanding the difference between holding metal directly and holding financial contracts.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-5 bg-dark-950 rounded-2xl border border-white/5 space-y-3">
+                        <div class="flex items-center space-x-2 text-gold-400 font-bold text-sm">
+                            <i class="fa-solid fa-cube"></i>
+                            <span>PHYSICAL GOLD</span>
+                        </div>
+                        <ul class="text-xs text-gray-300 space-y-2 list-disc list-inside">
+                            <li><strong>Forms:</strong> Jewellery, Sovereign Coins, Bullion Bars, Central Bank Ingot Stock.</li>
+                            <li><strong>Ownership:</strong> Direct physical possession or allocated vault ownership.</li>
+                            <li><strong>Counterparty Risk:</strong> Zero credit risk (the metal itself is the asset).</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-5 bg-dark-950 rounded-2xl border border-white/5 space-y-3">
+                        <div class="flex items-center space-x-2 text-blue-400 font-bold text-sm">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>FINANCIAL GOLD EXPOSURE</span>
+                        </div>
+                        <ul class="text-xs text-gray-300 space-y-2 list-disc list-inside">
+                            <li><strong>Forms:</strong> Gold ETFs (e.g., GLD, IAU), Futures Contracts, Mining Equities.</li>
+                            <li><strong>Ownership:</strong> You hold shares or paper contracts representing a financial claim.</li>
+                            <li><strong>Physical Link:</strong> Reputable ETFs hold physical bars in custodian vaults on behalf of shareholders.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Q: "If I buy an ETF, do I own a gold bar?" -->
+                <div class="p-4 bg-dark-900 rounded-2xl border border-white/10 space-y-2 text-xs">
+                    <div class="font-bold text-gold-400 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-question"></i>
+                        If I buy a Gold ETF online, do I personally own a gold bar?
+                    </div>
+                    <p class="text-gray-300 leading-relaxed">
+                        No. When you buy shares in a physically backed Gold ETF, you own a share of a trust. The trust holds allocated physical gold bars inside a custodian vault (such as the Bank of England or HSBC London). You do not personally take home a physical bar, but your share value directly tracks the price of gold stored in the vault.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Major Storage Locations Deep Dive -->
+            <div class="space-y-4">
+                <h3 class="text-xl font-bold text-white gold-serif flex items-center gap-2">
+                    <i class="fa-solid fa-key text-gold-400"></i>
+                    Major Known Storage Vault Locations
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="vault-card p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-start">
+                            <span class="text-2xl">🇺🇸</span>
+                            <span class="badge-official text-[10px] px-2 py-0.5 rounded font-mono">Disclosed Data</span>
+                        </div>
+                        <h4 class="text-base font-bold text-white">Federal Reserve Bank of New York</h4>
+                        <div class="text-xs text-gray-300 font-mono bg-dark-950 p-3 rounded-xl border border-white/5 space-y-1.5">
+                            <div><strong class="text-gray-400">Owner:</strong> ~36 Foreign Sovereign States</div>
+                            <div><strong class="text-gray-400">Custodian:</strong> Federal Reserve System</div>
+                            <div><strong class="text-gray-400">Physical Location:</strong> Manhattan Bedrock (~6,331t)</div>
+                        </div>
+                    </div>
+
+                    <div class="vault-card p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-start">
+                            <span class="text-2xl">🇬🇧</span>
+                            <span class="badge-official text-[10px] px-2 py-0.5 rounded font-mono">Disclosed Data</span>
+                        </div>
+                        <h4 class="text-base font-bold text-white">Bank of England (London Vaults)</h4>
+                        <div class="text-xs text-gray-300 font-mono bg-dark-950 p-3 rounded-xl border border-white/5 space-y-1.5">
+                            <div><strong class="text-gray-400">Owner:</strong> Sovereigns & Commercial LBMA Banks</div>
+                            <div><strong class="text-gray-400">Custodian:</strong> Bank of England / LBMA</div>
+                            <div><strong class="text-gray-400">Physical Location:</strong> London Subterranean (~5,100t)</div>
+                        </div>
+                    </div>
+
+                    <div class="vault-card p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-start">
+                            <span class="text-2xl">🇺🇸</span>
+                            <span class="badge-official text-[10px] px-2 py-0.5 rounded font-mono">Disclosed Data</span>
+                        </div>
+                        <h4 class="text-base font-bold text-white">US Treasury (Fort Knox / West Point)</h4>
+                        <div class="text-xs text-gray-300 font-mono bg-dark-950 p-3 rounded-xl border border-white/5 space-y-1.5">
+                            <div><strong class="text-gray-400">Owner:</strong> United States Government</div>
+                            <div><strong class="text-gray-400">Custodian:</strong> US Department of the Treasury</div>
+                            <div><strong class="text-gray-400">Physical Location:</strong> Kentucky & NY (~4,582t Fort Knox)</div>
+                        </div>
+                    </div>
+
+                    <div class="vault-card p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-start">
+                            <span class="text-2xl">🇫🇷</span>
+                            <span class="badge-official text-[10px] px-2 py-0.5 rounded font-mono">Disclosed Data</span>
+                        </div>
+                        <h4 class="text-base font-bold text-white">Banque de France (La Souterraine)</h4>
+                        <div class="text-xs text-gray-300 font-mono bg-dark-950 p-3 rounded-xl border border-white/5 space-y-1.5">
+                            <div><strong class="text-gray-400">Owner:</strong> French Republic</div>
+                            <div><strong class="text-gray-400">Custodian:</strong> Banque de France</div>
+                            <div><strong class="text-gray-400">Physical Location:</strong> 28m Below Paris (2,437t)</div>
+                        </div>
+                    </div>
+
+                    <div class="vault-card p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-start">
+                            <span class="text-2xl">🇨🇭</span>
+                            <span class="badge-estimate text-[10px] px-2 py-0.5 rounded font-mono">Partial Estimate</span>
+                        </div>
+                        <h4 class="text-base font-bold text-white">Swiss Freeports & SNB Vaults</h4>
+                        <div class="text-xs text-gray-300 font-mono bg-dark-950 p-3 rounded-xl border border-white/5 space-y-1.5">
+                            <div><strong class="text-gray-400">Owner:</strong> SNB, Private Wealth & Gold ETFs</div>
+                            <div><strong class="text-gray-400">Custodian:</strong> Swiss Vault Operators / SNB</div>
+                            <div><strong class="text-gray-400">Physical Location:</strong> Zurich & Geneva Freeports (~1,380t)</div>
+                        </div>
+                    </div>
+
+                    <div class="vault-card p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-start">
+                            <span class="text-2xl">🇨🇳</span>
+                            <span class="badge-estimate text-[10px] px-2 py-0.5 rounded font-mono">Undisclosed</span>
+                        </div>
+                        <h4 class="text-base font-bold text-white">Undisclosed Domestic Vaults</h4>
+                        <div class="text-xs text-gray-300 font-mono bg-dark-950 p-3 rounded-xl border border-white/5 space-y-1.5">
+                            <div><strong class="text-gray-400">Owner:</strong> China, Russia, Asian Sovereigns</div>
+                            <div><strong class="text-gray-400">Custodian:</strong> National Central Banks</div>
+                            <div><strong class="text-gray-400">Status:</strong> Exact holdings not publicly disclosed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q&A: Why store abroad? -->
+            <div class="p-6 rounded-3xl bg-dark-850 border border-white/10 space-y-3">
+                <h4 class="text-base font-bold text-gold-400 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-question"></i>
+                    Is all central-bank gold stored inside its own country?
+                </h4>
+                <p class="text-xs text-gray-300 leading-relaxed">
+                    No. Many sovereign nations store a portion of their official reserves abroad in cities like London or New York. This historical practice provides rapid access to global liquidity, enables instant trading settlement on international exchanges, and hedges against domestic geographical risks.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- ==================================================================== -->
+        <!-- PAGE 4: WHAT IS IT WORTH? -->
+        <!-- ==================================================================== -->
+        <section id="page-what-worth" class="page-section hidden space-y-8">
+            
+            <!-- Hero Title -->
+            <div class="vault-card p-8 rounded-3xl space-y-3">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full badge-official text-xs font-mono font-semibold">
+                    <i class="fa-solid fa-calculator"></i> Digital Museum Exhibit 04
+                </div>
+                <h2 class="text-3xl font-black text-white gold-serif">How Much Is All the Gold Worth?</h2>
+                <div class="flex items-baseline space-x-3">
+                    <span class="text-4xl sm:text-5xl font-black gold-gradient-text font-mono" id="heroGoldValue">$24.39 TRILLION</span>
+                    <span class="text-xs text-gray-400 font-mono">(At $3,450/oz Spot Baseline)</span>
+                </div>
+                <p class="text-xs text-gray-400">
+                    Calculated as: 219,891 Above-Ground Tonnes × 32,150.75 Troy Ounces/Tonne × $3,450 Spot Price.
+                </p>
+            </div>
+
+            <!-- Gold vs The World Comparisons -->
+            <div class="vault-card p-6 sm:p-8 rounded-3xl space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-white gold-serif">Gold vs The World’s Macro Assets</h3>
+                    <p class="text-xs text-gray-400">Comparing total gold value against global wealth, broad money, debt, and equities</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <span class="text-[10px] text-gray-400 font-mono uppercase block">GLOBAL REAL ESTATE</span>
+                        <div class="text-2xl font-black text-blue-400 font-mono">$380.0 T</div>
+                        <p class="text-[10px] text-gray-400">~15.6x larger than all gold</p>
+                    </div>
+
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <span class="text-[10px] text-gray-400 font-mono uppercase block">BROAD MONEY (M2)</span>
+                        <div class="text-2xl font-black text-emerald-400 font-mono">$144.0 T</div>
+                        <p class="text-[10px] text-gray-400">~5.9x larger than all gold</p>
+                    </div>
+
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <span class="text-[10px] text-gray-400 font-mono uppercase block">DEBT SECURITIES</span>
+                        <div class="text-2xl font-black text-purple-400 font-mono">$135.0 T</div>
+                        <p class="text-[10px] text-gray-400">~5.5x larger than all gold</p>
+                    </div>
+
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <span class="text-[10px] text-gray-400 font-mono uppercase block">LISTED EQUITIES</span>
+                        <div class="text-2xl font-black text-indigo-400 font-mono">$115.0 T</div>
+                        <p class="text-[10px] text-gray-400">~4.7x larger than all gold</p>
+                    </div>
+
+                    <div class="p-4 bg-gold-500/10 rounded-2xl border border-gold-500/30 space-y-2">
+                        <span class="text-[10px] text-gold-400 font-mono uppercase font-bold block">ALL MINED GOLD</span>
+                        <div class="text-2xl font-black text-gold-400 font-mono">$24.39 T</div>
+                        <p class="text-[10px] text-gold-300/80">~4.3% of Global Wealth ($480T)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- "WHAT IF GOLD COST..." Interactive Scenario Tool -->
+            <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-dark-850 to-dark-950 border border-gold-500/30 space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-white gold-serif flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-gold-400"></i>
+                        WHAT IF GOLD COST...
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Adjust the assumed gold price slider to observe changes in total above-ground gold market value.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div class="lg:col-span-5 space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-gray-300 font-semibold">Assumed Gold Price ($ / oz):</label>
+                                <span class="text-sm font-bold font-mono text-gold-400" id="explorerPriceLabel">$3,450 / oz</span>
+                            </div>
+                            <input type="range" id="priceExplorerSlider" min="2000" max="6000" step="50" value="3450" class="w-full">
+                            <div class="flex justify-between text-[10px] font-mono text-gray-500 mt-1">
+                                <span>$2,000</span>
+                                <span>$3,450 (Baseline)</span>
+                                <span>$6,000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-7 bg-dark-950 p-6 rounded-2xl border border-white/5 space-y-3 font-mono">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-400">All Existing Gold Value:</span>
+                            <span class="text-2xl font-bold text-gold-400" id="explorerCapOutput">$24.39 Trillion</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-400">Gold Value Per Capita (8.1B People):</span>
+                            <span class="text-white font-bold" id="explorerPerPersonOutput">$3,012 / person</span>
+                        </div>
+                        <p class="text-[11px] text-amber-400/90 pt-2 border-t border-white/5 font-sans font-medium">
+                            <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                            This is a mathematical scenario simulation, NOT a price forecast.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ==================================================================== -->
+        <!-- PAGE 5: PRICE STORY & MINING -->
+        <!-- ==================================================================== -->
+        <section id="page-price-story" class="page-section hidden space-y-8">
+            
+            <!-- Hero Title -->
+            <div class="vault-card p-8 rounded-3xl space-y-3">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full badge-official text-xs font-mono font-semibold">
+                    <i class="fa-solid fa-chart-line"></i> Digital Museum Exhibit 05
+                </div>
+                <h2 class="text-3xl font-black text-white gold-serif">The Gold Price Story</h2>
+                <p class="text-sm text-gray-400">
+                    How gold's value per troy ounce has evolved across recent economic eras.
+                </p>
+            </div>
+
+            <!-- Price History Chart & Dynamic Headline Statistic -->
+            <div class="vault-card p-6 sm:p-8 rounded-3xl space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-white/5">
+                    <div>
+                        <span class="text-xs text-gray-400 uppercase font-mono tracking-wider block">Change Over Selected Period</span>
+                        <div class="text-4xl sm:text-5xl font-black text-emerald-400 font-mono" id="headlinePctChange">+176.0%</div>
+                        <span class="text-xs text-gray-300 font-mono" id="headlinePriceSpan">From $1,250 to $3,450 / oz (+$2,200)</span>
+                    </div>
+                    
+                    <div class="flex items-center bg-dark-950 p-1.5 rounded-xl border border-white/10">
+                        <button onclick="setPriceTimeframe('5Y')" id="btn5Y" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all">5Y</button>
+                        <button onclick="setPriceTimeframe('10Y')" id="btn10Y" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-gold-500 text-dark-950 transition-all">10Y</button>
+                        <button onclick="setPriceTimeframe('20Y')" id="btn20Y" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all">20Y</button>
+                    </div>
+                </div>
+
+                <div class="h-80 relative">
+                    <canvas id="priceHistoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- "WHY DOES GOLD MOVE?" Section -->
+            <div class="vault-card p-6 sm:p-8 rounded-3xl space-y-4">
+                <h3 class="text-xl font-bold text-white gold-serif flex items-center gap-2">
+                    <i class="fa-solid fa-scale-balanced text-gold-400"></i>
+                    Why Does Gold's Price Move?
+                </h3>
+                <p class="text-xs text-gray-400">Gold's market price reflects a dynamic combination of four primary economic drivers:</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="text-amber-400 text-xs font-mono font-bold">1. INFLATION & FIAT CURRENCY</div>
+                        <h4 class="text-sm font-bold text-white">Purchasing Power Concerns</h4>
+                        <p class="text-xs text-gray-400">As paper currencies lose purchasing power to inflation, investors seek hard assets that preserve real wealth.</p>
+                    </div>
+
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="text-gold-400 text-xs font-mono font-bold">2. INTEREST RATES</div>
+                        <h4 class="text-sm font-bold text-white">Opportunity Cost</h4>
+                        <p class="text-xs text-gray-400">Because gold yields no interest income, lower real interest rates reduce the opportunity cost of holding physical metal.</p>
+                    </div>
+
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="text-blue-400 text-xs font-mono font-bold">3. CENTRAL BANK DEMAND</div>
+                        <h4 class="text-sm font-bold text-white">Sovereign Accumulation</h4>
+                        <p class="text-xs text-gray-400">Central bank net purchases (over 1,000t/year) create sustained structural demand on global exchanges.</p>
+                    </div>
+
+                    <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-2">
+                        <div class="text-emerald-400 text-xs font-mono font-bold">4. UNCERTAINTY & RISK</div>
+                        <h4 class="text-sm font-bold text-white">Geopolitical Safe Haven</h4>
+                        <p class="text-xs text-gray-400">During geopolitical friction or banking system stress, capital flows toward safe-haven assets with zero counterparty risk.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- "HOW MUCH NEW GOLD IS MINED EACH YEAR?" Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <div class="lg:col-span-6 vault-card p-6 sm:p-8 rounded-3xl space-y-4">
+                    <h3 class="text-xl font-bold text-white gold-serif flex items-center gap-2">
+                        <i class="fa-solid fa-pickaxe text-gold-400"></i>
+                        How Much New Gold Is Mined Each Year?
+                    </h3>
+                    <div class="space-y-3 font-mono">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-400">Annual Mine Production:</span>
+                            <span class="text-gold-400 font-bold text-lg">~3,650 Tonnes / Year</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-400">Stock Inflation Rate:</span>
+                            <span class="text-emerald-400 font-bold">+1.66% / Year</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-300 leading-relaxed pt-2 border-t border-white/5">
+                        New annual mining adds only a tiny percentage (~1.66%) to the existing above-ground stock each year. This low supply growth is why gold functions effectively as a long-term inflation hedge.
+                    </p>
+                </div>
+
+                <div class="lg:col-span-6 vault-card p-6 sm:p-8 rounded-3xl space-y-4">
+                    <h3 class="text-xl font-bold text-white gold-serif">Where Is New Gold Mined?</h3>
+                    <p class="text-xs text-gray-400">Top primary mining nations by annual extraction tonnage (USGS):</p>
+                    
+                    <div class="space-y-2 font-mono text-xs">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-white">🇨🇳 China</span>
+                                <span class="text-gold-400">~370 t / yr</span>
+                            </div>
+                            <div class="w-full h-2 bg-dark-950 rounded-full overflow-hidden">
+                                <div class="h-full bg-gold-500 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-white">🇦🇺 Australia / 🇷🇺 Russia</span>
+                                <span class="text-amber-400">~310 t / yr each</span>
+                            </div>
+                            <div class="w-full h-2 bg-dark-950 rounded-full overflow-hidden">
+                                <div class="h-full bg-amber-500 rounded-full" style="width: 83%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-white">🇨🇦 Canada</span>
+                                <span class="text-blue-400">~200 t / yr</span>
+                            </div>
+                            <div class="w-full h-2 bg-dark-950 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500 rounded-full" style="width: 54%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-white">🇺🇸 United States</span>
+                                <span class="text-emerald-400">~170 t / yr</span>
+                            </div>
+                            <div class="w-full h-2 bg-dark-950 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-500 rounded-full" style="width: 46%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ==================================================================== -->
+        <!-- GOLD FACTS EXHIBIT SECTION -->
+        <!-- ==================================================================== -->
+        <section class="mt-16 pt-12 border-t border-white/10 space-y-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gold-500/10 text-gold-400 flex items-center justify-center text-lg font-bold">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-white gold-serif">Surprising Gold Facts</h3>
+                    <p class="text-xs text-gray-400">8 verified facts about the element gold</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="text-gold-400 font-mono text-xs font-bold">FACT 01</div>
+                    <h4 class="text-sm font-bold text-white">Indestructible Element</h4>
+                    <p class="text-xs text-gray-400">Gold is chemical element 79. It does not tarnish, corrode, or decay over millennia.</p>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="text-gold-400 font-mono text-xs font-bold">FACT 02</div>
+                    <h4 class="text-sm font-bold text-white">Extreme Density</h4>
+                    <p class="text-xs text-gray-400">Gold weighs 19.32 grams per cm³. A standard 1-liter bottle filled with gold would weigh 19.32 kg (42.6 lbs).</p>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="text-gold-400 font-mono text-xs font-bold">FACT 03</div>
+                    <h4 class="text-sm font-bold text-white">Infinitely Recyclable</h4>
+                    <p class="text-xs text-gray-400">Gold can be melted down and reminted repeatedly without losing any purity or metallic properties.</p>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="text-gold-400 font-mono text-xs font-bold">FACT 04</div>
+                    <h4 class="text-sm font-bold text-white">Essential for Technology</h4>
+                    <p class="text-xs text-gray-400">Because it is highly conductive and corrosion-free, gold is used in smartphone circuits, space satellites, and medical implants.</p>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="text-gold-400 font-mono text-xs font-bold">FACT 05</div>
+                    <h4 class="text-sm font-bold text-white">Sovereign Reserve Asset</h4>
+                    <p class="text-xs text-gray-400">Central banks hold 38,666 tonnes of gold as ultimate monetary backing that carries no credit or counterparty risk.</p>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="text-gold-400 font-mono text-xs font-bold">FACT 06</div>
+                    <h4 class="text-sm font-bold text-white">Thousands of Years of Money</h4>
+                    <p class="text-xs text-gray-400">Gold has functioned as a universal store of value and currency anchor across civilizations for over 4,000 years.</p>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="text-gold-400 font-mono text-xs font-bold">FACT 07</div>
+                    <h4 class="text-sm font-bold text-white">Jewellery Dominance</h4>
+                    <p class="text-xs text-gray-400">Personal jewellery accounts for ~44.4% of all above-ground gold stock, primarily in India and China.</p>
+                </div>
+
+                <div class="vault-card p-5 rounded-2xl space-y-2">
+                    <div class="text-gold-400 font-mono text-xs font-bold">FACT 08</div>
+                    <h4 class="text-sm font-bold text-white">Geographically Mined</h4>
+                    <p class="text-xs text-gray-400">Gold is extracted on every continent except Antarctica. Top modern mining nations include China, Australia, Russia, and the USA.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- SOURCES & METHODOLOGY DRAWER MODAL -->
+    <div id="sourcesDrawer" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex justify-end transition-all">
+        <div class="w-full max-w-xl bg-dark-900 h-full p-6 sm:p-8 overflow-y-auto border-l border-white/10 space-y-6">
+            <div class="flex justify-between items-center border-b border-white/10 pb-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-book-bookmark text-gold-400 text-lg"></i>
+                    <h3 class="text-lg font-bold text-white gold-serif">Sources & Methodology</h3>
+                </div>
+                <button onclick="toggleSourcesDrawer()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <p class="text-xs text-gray-400 leading-relaxed">
+                This dashboard clearly separates verified sovereign central bank statistics from private market estimates to ensure transparency and institutional standards.
+            </p>
+
+            <div class="space-y-4 text-xs font-mono">
+                <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-1">
+                    <div class="flex justify-between text-emerald-400 font-bold">
+                        <span>Above-Ground Stock (219,891 t)</span>
+                        <span class="badge-official px-1.5 py-0.5 rounded text-[10px]">Official Estimate</span>
+                    </div>
+                    <div class="text-gray-300">Source: World Gold Council (WGC)</div>
+                    <div class="text-gray-500">Date: End-2025 Standardized Data</div>
+                </div>
+
+                <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-1">
+                    <div class="flex justify-between text-emerald-400 font-bold">
+                        <span>Central Bank Reserves (38,666 t)</span>
+                        <span class="badge-official px-1.5 py-0.5 rounded text-[10px]">Official Reported</span>
+                    </div>
+                    <div class="text-gray-300">Source: WGC / IMF International Financial Statistics (IFS)</div>
+                    <div class="text-gray-500">Date: Latest Available Filings</div>
+                </div>
+
+                <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-1">
+                    <div class="flex justify-between text-amber-400 font-bold">
+                        <span>Underground Reserves (54,770 t)</span>
+                        <span class="badge-estimate px-1.5 py-0.5 rounded text-[10px]">Geological Estimate</span>
+                    </div>
+                    <div class="text-gray-300">Source: US Geological Survey (USGS) / Metals Focus</div>
+                    <div class="text-gray-500">Date: End-2025 Estimate</div>
+                </div>
+
+                <div class="p-4 bg-dark-950 rounded-2xl border border-white/5 space-y-1">
+                    <div class="flex justify-between text-indigo-400 font-bold">
+                        <span>Macro Wealth Benchmarks ($480T)</span>
+                        <span class="badge-calculated px-1.5 py-0.5 rounded text-[10px]">Macro Model</span>
+                    </div>
+                    <div class="text-gray-300">Source: UBS Global Wealth Report / BIS / World Bank</div>
+                    <div class="text-gray-500">Date: 2025 Benchmark Dataset</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark-950 border-t border-white/10 py-8 mt-16 text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                THE WORLD'S GOLD — An Interactive Visual Story & Digital Museum Exhibit
+            </div>
+            <div class="font-mono text-gray-600">
+                Data Sources: World Gold Council, IMF IFS, USGS, LBMA
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Data & Core Parameters
+        const DATA = {
+            totalMinedTonnes: 219891,
+            undergroundTonnes: 54770,
+            centralBankTonnes: 38666,
+            globalPopulation: 8100000000,
+            troyOuncesPerTonne: 32150.7466,
+            densityTonnesPerM3: 19.32,
+            spotPriceUSD: 3450
+        };
+
+        const SECTORS = [
+            { name: 'Jewellery', tonnes: 97645, pct: 44.4, color: '#F59E0B' },
+            { name: 'Bars, Coins & ETFs', tonnes: 50978, pct: 23.2, color: '#D4AF37' },
+            { name: 'Central Banks', tonnes: 38666, pct: 17.6, color: '#3B82F6' },
+            { name: 'Other / Technology', tonnes: 32602, pct: 14.8, color: '#10B981' }
+        ];
+
+        const CUBE_STEPS = [
+            { tonnes: 1000, label: '1,000 Tonnes (Switzerland)', benchmark: '3-Storey Suburban House', desc: 'Roughly equivalent to a large family mansion volume' },
+            { tonnes: 10000, label: '10,000 Tonnes (US + DE)', benchmark: 'Indoor Tennis Court Ceiling', desc: 'Fits inside a standard indoor tennis court ceiling (10m height)' },
+            { tonnes: 100000, label: '100,000 Tonnes (Jewellery Stock)', benchmark: '4x Olympic Swimming Pools', desc: 'Equivalent to 4 Olympic swimming pool volumes' },
+            { tonnes: 219891, label: '219,891 Tonnes (All Mined Gold)', benchmark: 'Statue of Liberty Pedestal', desc: 'Fits inside the stone pedestal base of Lady Liberty (47m base)' }
+        ];
+
+        const CENTRAL_BANKS = [
+            { code: 'USA', name: 'United States', tonnes: 8133.5, sharePct: 72.4, lat: 37.0902, lng: -95.7129, rank: 1 },
+            { code: 'DEU', name: 'Germany', tonnes: 3351.5, sharePct: 71.8, lat: 51.1657, lng: 10.4515, rank: 2 },
+            { code: 'IMF', name: 'IMF (Supranational)', tonnes: 2814.0, sharePct: 100.0, lat: 38.8997, lng: -77.0442, rank: 3 },
+            { code: 'ITA', name: 'Italy', tonnes: 2451.8, sharePct: 68.5, lat: 41.8719, lng: 12.5674, rank: 4 },
+            { code: 'FRA', name: 'France', tonnes: 2436.9, sharePct: 67.2, lat: 46.2276, lng: 2.2137, rank: 5 },
+            { code: 'RUS', name: 'Russia', tonnes: 2335.9, sharePct: 31.2, lat: 61.5240, lng: 105.3188, rank: 6 },
+            { code: 'CHN', name: 'China', tonnes: 2264.3, sharePct: 4.9, lat: 35.8617, lng: 104.1954, rank: 7 },
+            { code: 'CHE', name: 'Switzerland', tonnes: 1040.0, sharePct: 7.5, lat: 46.8182, lng: 8.2275, rank: 8 },
+            { code: 'IND', name: 'India', tonnes: 853.7, sharePct: 9.8, lat: 20.5937, lng: 78.9629, rank: 9 },
+            { code: 'JPN', name: 'Japan', tonnes: 846.0, sharePct: 4.6, lat: 36.2048, lng: 138.2529, rank: 10 },
+            { code: 'NLD', name: 'Netherlands', tonnes: 612.5, sharePct: 60.5, lat: 52.1326, lng: 5.2913, rank: 11 }
+        ];
+
+        const HISTORICAL_PRICES = {
+            '5Y': {
+                labels: ['2021', '2022', '2023', '2024', '2025', '2026'],
+                data: [1790, 1800, 1940, 2380, 3431, 3450],
+                start: 1790,
+                end: 3450,
+                pct: '+92.7%',
+                span: 'From $1,790 to $3,450 / oz (+$1,660)'
+            },
+            '10Y': {
+                labels: ['2016', '2018', '2020', '2022', '2024', '2026'],
+                data: [1250, 1270, 1770, 1800, 2380, 3450],
+                start: 1250,
+                end: 3450,
+                pct: '+176.0%',
+                span: 'From $1,250 to $3,450 / oz (+$2,200)'
+            },
+            '20Y': {
+                labels: ['2006', '2010', '2014', '2018', '2022', '2026'],
+                data: [600, 1225, 1260, 1270, 1800, 3450],
+                start: 600,
+                end: 3450,
+                pct: '+475.0%',
+                span: 'From $600 to $3,450 / oz (+$2,850)'
+            }
+        };
+
+        // State variables
+        let currentTab = 'how-much';
+        let reservesMetric = 'tonnes';
+        let sectorChartInstance = null;
+        let reservesChartInstance = null;
+        let priceChartInstance = null;
+        let mapInstance = null;
+
+        // Onload Initialization
+        window.onload = function() {
+            initSectorChart();
+            initCubeSlider();
+            initReservesChart();
+            initLeafletMap();
+            initExplorerSlider();
+            initPriceHistoryChart();
+
+            document.getElementById('cubeSlider').addEventListener('input', updateCubeScale);
+            document.getElementById('priceExplorerSlider').addEventListener('input', updateExplorer);
+        };
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('bg-gold-500', 'text-dark-950', 'font-bold', 'shadow-md');
+                btn.classList.add('text-gray-400');
+            });
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.add('hidden'));
+
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('bg-gold-500', 'text-dark-950', 'font-bold', 'shadow-md');
+            activeBtn.classList.remove('text-gray-400');
+
+            document.getElementById(`page-${tabId}`).classList.remove('hidden');
+
+            if (tabId === 'who-has' && mapInstance) {
+                setTimeout(() => mapInstance.invalidateSize(), 200);
+            }
+        }
+
+        function toggleSourcesDrawer() {
+            const drawer = document.getElementById('sourcesDrawer');
+            drawer.classList.toggle('hidden');
+        }
+
+        function initSectorChart() {
+            const ctx = document.getElementById('sectorChart').getContext('2d');
+            sectorChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: SECTORS.map(s => s.name),
+                    datasets: [{
+                        data: SECTORS.map(s => s.tonnes),
+                        backgroundColor: SECTORS.map(s => s.color),
+                        borderWidth: 2,
+                        borderColor: '#0B0C0E'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#E2E8F0', font: { family: 'Inter', size: 12 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const item = SECTORS[context.dataIndex];
+                                    return ` ${item.name}: ${item.tonnes.toLocaleString()} t (${item.pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        function initCubeSlider() {
+            updateCubeScale();
+        }
+
+        function updateCubeScale() {
+            const sliderVal = parseInt(document.getElementById('cubeSlider').value);
+            const stepData = CUBE_STEPS[sliderVal];
+
+            const volumeM3 = stepData.tonnes / DATA.densityTonnesPerM3;
+            const edgeMeters = Math.cbrt(volumeM3);
+
+            document.getElementById('cubeTonnesLabel').innerText = `${stepData.tonnes.toLocaleString()} Tonnes`;
+            document.getElementById('cubeVolumeLabel').innerText = `${Math.round(volumeM3).toLocaleString()} m³`;
+            document.getElementById('cubeEdgeLabel').innerText = `${edgeMeters.toFixed(2)} Meters`;
+
+            document.getElementById('benchmarkTitle').innerText = stepData.benchmark;
+            document.getElementById('benchmarkDesc').innerText = stepData.desc;
+
+            const maxEdge = 22.49;
+            const sizePct = Math.max(18, (edgeMeters / maxEdge) * 100);
+            
+            const visualBox = document.getElementById('visualCubeBox');
+            visualBox.style.width = `${sizePct}%`;
+            visualBox.style.height = `${sizePct * 7.5}px`;
+            document.getElementById('cubeInnerLabel').innerText = `${edgeMeters.toFixed(1)}m`;
+        }
+
+        function initReservesChart() {
+            const ctx = document.getElementById('reservesChart').getContext('2d');
+            reservesChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: CENTRAL_BANKS.map(c => c.name),
+                    datasets: [{
+                        label: 'Gold Reserves (Tonnes)',
+                        data: CENTRAL_BANKS.map(c => c.tonnes),
+                        backgroundColor: '#D4AF37',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const item = CENTRAL_BANKS[context.dataIndex];
+                                    return ` ${item.tonnes.toLocaleString()} t (${item.sharePct}% FX Reserves)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#282E3B' },
+                            ticks: { color: '#8C92A4', font: { family: 'JetBrains Mono' } }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#E2E8F0', font: { family: 'Inter' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function setReservesMetric(metric) {
+            reservesMetric = metric;
+            const btnTonnes = document.getElementById('btnMetricTonnes');
+            const btnShare = document.getElementById('btnMetricShare');
+
+            if (metric === 'tonnes') {
+                btnTonnes.className = 'px-4 py-2 rounded-lg text-xs font-bold bg-gold-500 text-dark-950 transition-all';
+                btnShare.className = 'px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all';
+                document.getElementById('barChartTitle').innerText = 'Top Sovereign Official Gold Reserves (Tonnes)';
+
+                reservesChartInstance.data.datasets[0].label = 'Gold Reserves (Tonnes)';
+                reservesChartInstance.data.datasets[0].data = CENTRAL_BANKS.map(c => c.tonnes);
+                reservesChartInstance.data.datasets[0].backgroundColor = '#D4AF37';
+            } else {
+                btnShare.className = 'px-4 py-2 rounded-lg text-xs font-bold bg-gold-500 text-dark-950 transition-all';
+                btnTonnes.className = 'px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all';
+                document.getElementById('barChartTitle').innerText = 'Gold Share of Official Foreign Reserves (%)';
+
+                reservesChartInstance.data.datasets[0].label = 'Gold Share of FX (%)';
+                reservesChartInstance.data.datasets[0].data = CENTRAL_BANKS.map(c => c.sharePct);
+                reservesChartInstance.data.datasets[0].backgroundColor = '#3B82F6';
+            }
+            reservesChartInstance.update();
+        }
+
+        function initLeafletMap() {
+            mapInstance = L.map('mapContainer', {
+                center: [25, 10],
+                zoom: 2,
+                zoomControl: false,
+                attributionControl: false
+            });
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 18
+            }).addTo(mapInstance);
+
+            CENTRAL_BANKS.forEach(country => {
+                if (country.lat && country.lng) {
+                    const radius = Math.max(6, Math.sqrt(country.tonnes) * 0.35);
+                    const circle = L.circleMarker([country.lat, country.lng], {
+                        radius: radius,
+                        fillColor: '#D4AF37',
+                        color: '#FFFBEB',
+                        weight: 1.5,
+                        opacity: 0.9,
+                        fillOpacity: 0.6
+                    }).addTo(mapInstance);
+
+                    const popupContent = `
+                        <div class="p-1 font-sans">
+                            <div class="text-sm font-bold text-white mb-1 flex items-center justify-between">
+                                <span>${country.name}</span>
+                                <span class="font-mono text-xs text-gold-400">#${country.rank}</span>
+                            </div>
+                            <div class="text-xs text-gray-300 font-mono space-y-1">
+                                <div>Reserves: <strong class="text-white">${country.tonnes.toLocaleString()} t</strong></div>
+                                <div>Share of FX: <strong class="text-gold-400">${country.sharePct}%</strong></div>
+                            </div>
+                        </div>
+                    `;
+                    circle.bindPopup(popupContent);
+                }
+            });
+        }
+
+        function initExplorerSlider() {
+            updateExplorer();
+        }
+
+        function updateExplorer() {
+            const price = parseFloat(document.getElementById('priceExplorerSlider').value);
+            document.getElementById('explorerPriceLabel').innerText = `$${price.toLocaleString()} / oz`;
+
+            const totalOunces = DATA.totalMinedTonnes * DATA.troyOuncesPerTonne;
+            const marketCapUSD = totalOunces * price;
+            const capTrillions = (marketCapUSD / 1e12).toFixed(2);
+            
+            const perPersonUSD = Math.round(marketCapUSD / DATA.globalPopulation);
+
+            document.getElementById('explorerCapOutput').innerText = `$${capTrillions} Trillion`;
+            document.getElementById('explorerPerPersonOutput').innerText = `$${perPersonUSD.toLocaleString()} / person`;
+        }
+
+        function initPriceHistoryChart() {
+            const ctx = document.getElementById('priceHistoryChart').getContext('2d');
+            priceChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: HISTORICAL_PRICES['10Y'].labels,
+                    datasets: [{
+                        label: 'Gold Price (USD / Troy Oz)',
+                        data: HISTORICAL_PRICES['10Y'].data,
+                        borderColor: '#D4AF37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#F3E5AB'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` Gold Price: $${context.raw.toLocaleString()} / oz`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#282E3B' },
+                            ticks: { color: '#8C92A4', font: { family: 'JetBrains Mono' } }
+                        },
+                        y: {
+                            grid: { color: '#282E3B' },
+                            ticks: { color: '#E2E8F0', font: { family: 'JetBrains Mono' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function setPriceTimeframe(tf) {
+            ['5Y', '10Y', '20Y'].forEach(t => {
+                const btn = document.getElementById(`btn${t}`);
+                if (t === tf) {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-gold-500 text-dark-950 transition-all';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all';
+                }
+            });
+
+            const dataObj = HISTORICAL_PRICES[tf];
+            priceChartInstance.data.labels = dataObj.labels;
+            priceChartInstance.data.datasets[0].data = dataObj.data;
+            priceChartInstance.update();
+
+            document.getElementById('headlinePctChange').innerText = dataObj.pct;
+            document.getElementById('headlinePriceSpan').innerText = dataObj.span;
+        }
+    </script>
+</body>
+</html>
